@@ -3,17 +3,20 @@
   "info": {
     "title": "API Usuarios",
     "version": "1.0.0",
-    "description": "API para administrar usuarios del sistema"
+    "description": "API para administrar usuarios (Clientes y Admins) y gestionar su acceso a pedidos."
   },
+
   "paths": {
     "/api/users": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Listar usuarios",
-        "description": "Solo el admin puede ver todos los usuarios",
+        "description": "Solo el ADMIN puede ver el listado completo de usuarios.",
         "responses": {
           "200": {
-            "description": "Lista de usuarios",
+            "description": "Lista de usuarios obtenida exitosamente",
             "content": {
               "application/json": {
                 "schema": {
@@ -27,10 +30,13 @@
           }
         }
       },
+
       "post": {
-        "tags": ["Users"],
-        "summary": "Crear usuario",
-        "description": "Registro de un nuevo usuario",
+        "tags": [
+          "Users"
+        ],
+        "summary": "Crear usuario (Registro)",
+        "description": "Permite a un usuario registrarse o a un admin crear usuarios. El email debe ser único.",
         "requestBody": {
           "required": true,
           "content": {
@@ -41,9 +47,10 @@
             }
           }
         },
+
         "responses": {
           "201": {
-            "description": "Usuario creado",
+            "description": "Usuario creado exitosamente",
             "content": {
               "application/json": {
                 "schema": {
@@ -51,6 +58,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Error de validación (ej. password corto o email duplicado)"
           }
         }
       }
@@ -58,8 +68,11 @@
 
     "/api/users/{userId}": {
       "get": {
-        "tags": ["Users"],
-        "summary": "Obtener usuario por ID",
+        "tags": [
+          "Users"
+        ],
+        "summary": "Obtener perfil de usuario",
+        "description": "Un usuario puede ver su propio perfil. El Admin puede ver cualquiera.",
         "parameters": [
           {
             "name": "userId",
@@ -71,16 +84,30 @@
             }
           }
         ],
+
         "responses": {
-          "200": { "description": "Usuario encontrado" },
-          "404": { "description": "Usuario no encontrado" }
+          "200": {
+            "description": "Detalles del usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuario no encontrado"
+          }
         }
       },
 
       "patch": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Actualizar usuario",
-        "description": "El usuario puede editar su perfil, el admin puede cambiar el rol",
+        "description": "Users: Pueden editar su propio perfil (nombre, dirección, tel). Admin: Puede editar roles.",
         "parameters": [
           {
             "name": "userId",
@@ -103,7 +130,47 @@
           }
         },
         "responses": {
-          "200": { "description": "Usuario actualizado" }
+          "200": {
+            "description": "Usuario actualizado correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      },
+
+
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Eliminar usuario",
+        "description": "Solo el ADMIN puede eliminar usuarios del sistema.",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Usuario eliminado correctamente"
+          },
+          "403": {
+            "description": "No autorizado (Solo Admin)"
+          },
+          "404": {
+            "description": "Usuario no encontrado"
+          }
         }
       }
     }
@@ -113,7 +180,13 @@
     "schemas": {
       "User": {
         "type": "object",
-        "required": ["userId", "name", "email", "role"],
+        "description": "Esquema de respuesta (Salida). No incluye password.",
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "role"
+        ],
         "properties": {
           "userId": {
             "type": "string",
@@ -128,7 +201,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["ADMIN", "CLIENT"]
+            "enum": [
+              "ADMIN",
+              "CLIENT"
+            ],
+            "default": "CLIENT"
           },
           "address": {
             "type": "string"
@@ -141,24 +218,66 @@
 
       "UserCreate": {
         "type": "object",
-        "required": ["name", "email", "password"],
+        "description": "Datos necesarios para registrar un usuario.",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
-          "password": { "type": "string", "minLength": 8 }
-        }
-      },
-
-      "UserUpdate": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "address": { "type": "string" },
-          "phone": { "type": "string" },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Debe ser mayor a 8 caracteres y no secuencial."
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
           "role": {
             "type": "string",
-            "enum": ["ADMIN", "CLIENT"],
-            "description": "Solo editable por admin"
+            "enum": [
+              "ADMIN",
+              "CLIENT"
+            ],
+            "default": "CLIENT"
+          }
+        }
+      },
+      
+      "UserUpdate": {
+        "type": "object",
+        "description": "Campos que se pueden actualizar.",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "CLIENT"
+            ],
+            "description": "Solo editable por ADMIN"
           }
         }
       }
