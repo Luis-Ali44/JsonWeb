@@ -1,0 +1,299 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Órdenes",
+    "version": "1.0.0",
+    "description": "API para administrar pedidos de los usuarios"
+  },
+
+  "paths": {
+    "/api/orders": {
+  "get": {
+    "tags": ["Orders"],
+    "summary": "Listar órdenes",
+    "description": "Obtiene la lista de órdenes. El admin ve todas las órdenes. El usuario puede filtrar solo las suyas usando userId.",
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Filtra las órdenes por usuario (uso para cleintes)"
+      },
+      {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "description": "Número de página"
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "description": "Cantidad de registros por página"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Lista de órdenes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Crear orden",
+        "description": "Permite a un usuario crear una nueva orden",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Orden creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos"
+          }
+        }
+      }
+    },
+
+    "/api/orders/{orderId}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Obtener orden por ID",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orden encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Orden no encontrada"
+          }
+        }
+      },
+
+      "patch": {
+        "tags": ["Orders"],
+        "summary": "Actualizar orden",
+        "description": "El usuario puede actualizar la dirección. El admin puede actualizar el estado.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Orden actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Actualización no permitida"
+          }
+        }
+      },
+
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Cancelar orden",
+        "description": "El usuariio puede cancelar la orden si está en estado pendiente",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orden cancelada"
+          },
+          "404": {
+            "description": "Orden no encontrada"
+          }
+        }
+      }
+    }
+  },
+
+  "components": {
+    "schemas": {
+      "Order": {
+        "type": "object",
+        "required": [
+          "orderId",
+          "userId",
+          "items",
+          "totalAmount",
+          "stateId",
+          "address"
+        ],
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["productId", "quantity"],
+              "properties": {
+                "productId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "totalAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "stateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "description": "Una orden debe tener al menos un item y un usuario asociado"
+      },
+
+      "OrderCreate": {
+        "type": "object",
+        "required": ["userId", "items", "address"],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["productId", "quantity"],
+              "properties": {
+                "productId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "address": {
+            "type": "string"
+          }
+        }
+      },
+
+      "OrderUpdate": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Editable por el usuario"
+          },
+          "stateId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Editable solo por el admin"
+          }
+        }
+      }
+    }
+  }
+}

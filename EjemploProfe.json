@@ -1,0 +1,310 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Clients API (AWOS)",
+    "version": "1.0.0",
+    "description": "API para gestión de clientes. Permite ver y realizar pedidos o modificar perfil."
+  },
+
+
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+
+
+  "tags": [
+    {
+      "name": "Clients",
+      "description": "Operaciones del recurso Clients"
+    }
+  ],
+
+
+  "paths": {
+    "/api/clients": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+
+        "summary": "Registrar nuevo cliente",
+        "description": "Crea un perfil de cliente. Valida email único y password > 8 caracteres.",
+        
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientCreate"
+              },
+              "examples": {
+                "newClient": {
+                  "value": {
+                    "name": "Maria Gonzalez",
+                    "email": "maria@example.com",
+                    "password": "PasswordSeguro123!",
+                    "address": "Calle Real 45, Tuxtla",
+                    "phone": "961-123-4567"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          }
+        }
+      }
+    },
+    "/api/clients/{id}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Obtener perfil de cliente",
+        "description": "Permite al cliente ver su propia información (sin devolver el password).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Identificador UUID del cliente (userId)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Editar perfil",
+        "description": "Permite editar datos como dirección o teléfono.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClientResponse": {
+        "type": "object",
+        "description": "Datos públicos del cliente (Output). NO incluye password.",
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Corresponde al userId de tu tabla",
+            "example": "c-550e8400-e29b"
+          },
+          "name": {
+            "type": "string",
+            "example": "Maria Gonzalez"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "maria@example.com"
+          },
+          "address": {
+            "type": "string",
+            "example": "Calle Real 45, Tuxtla"
+          },
+          "phone": {
+            "type": "string",
+            "example": "961-123-4567"
+          }
+        }
+      },
+      "ClientCreate": {
+        "type": "object",
+        "description": "Datos para registro (Input). Requiere password > 8 chars.",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 9,
+            "description": "Regla de negocio: password > 8 caracteres",
+            "example": "SuperSecret123!"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        }
+      },
+      "ClientUpdate": {
+        "type": "object",
+        "description": "Campos permitidos para edición.",
+        "properties": {
+          "name": { "type": "string", "minLength": 2 },
+          "address": { "type": "string" },
+          "phone": { "type": "string" }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "details": { "type": "object" }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Datos inválidos",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso no encontrado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" },
+            "examples": {
+              "notFound": {
+                "value": {
+                  "code": "CLIENT_NOT_FOUND",
+                  "message": "El cliente no existe",
+                  "details": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Regla de unicidad violada (Email)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" },
+            "examples": {
+              "emailDuplicate": {
+                "value": {
+                  "code": "EMAIL_EXISTS",
+                  "message": "El email ya está registrado",
+                  "details": { "field": "email" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "Regla de negocio violada (Password corto)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" },
+            "examples": {
+              "weakPassword": {
+                "value": {
+                  "code": "INVALID_PASSWORD",
+                  "message": "La contraseña debe tener más de 8 caracteres",
+                  "details": { "field": "password" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

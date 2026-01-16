@@ -1,0 +1,7 @@
+{
+"code": "INVALID_PRICE",
+"message": "Validación fallida",
+"details": { "field": "price",
+
+"rule": "> 0"}
+} 

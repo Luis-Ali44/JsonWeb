@@ -1,0 +1,202 @@
+{
+  "paths": {
+    "/api/order-states": {
+      "get": {
+        "tags": ["Order-States"],
+        "summary": "Listar estados de orden",
+        "description": "Obtiene la lista de estados de las órdenes. Uso administrativo y consulta general.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive"]
+            },
+            "description": "Filtrar estados activos o inactivos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de estados de orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderState"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+
+      "post": {
+        "tags": ["Order-States"],
+        "summary": "Crear estado de orden",
+        "description": "Permite al administrador crear un nuevo estado de orden",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderStateCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Estado de orden creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderState"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado duplicado"
+          },
+          "422": {
+            "description": "Datos inválidos"
+          }
+        }
+      }
+    },
+
+    "/api/order-states/{stateId}": {
+      "get": {
+        "tags": ["Order-States"],
+        "summary": "Obtener estado por ID",
+        "parameters": [
+          {
+            "name": "stateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Estado no encontrado"
+          }
+        }
+      },
+
+      "patch": {
+        "tags": ["Order-States"],
+        "summary": "Actualizar estado de orden",
+        "description": "Permite al administrador actualizar el nombre o estatus del estado",
+        "parameters": [
+          {
+            "name": "stateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderStateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Estado no encontrado"
+          },
+          "422": {
+            "description": "Datos inválidos"
+          }
+        }
+      }
+    }
+  },
+
+  "components": {
+    "schemas": {
+      "OrderState": {
+        "type": "object",
+        "required": [
+          "stateId",
+          "name",
+          "isActive"
+        ],
+        "properties": {
+          "stateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Estado de la orden (Pending, Received, Shipped, Transit, Delivered)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Indica si el estado está activo"
+          }
+        },
+        "description": "Estado que define el seguimiento de una orden"
+      },
+
+      "OrderStateCreate": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+
+      "OrderStateUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
